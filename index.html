@@ -82,7 +82,8 @@
         <div class="mb-6">
           <div class="flex flex-col md:flex-row md:items-center justify-between mb-2">
             <label for="input-text" class="font-medium text-dark dark:text-light mb-2 md:mb-0">输入文本:</label>
-            <div class="flex space-x-2">
+            <div class="flex items-center space-x-2">
+              <span id="char-counter" class="text-sm text-gray-500 dark:text-gray-400 mr-2">0 / 50000</span>
               <button id="clear-input" class="text-gray-500 dark:text-gray-400 hover:text-red-500 transition-all-300">
                 <i class="fa fa-times-circle"></i> 清空
               </button>
@@ -119,8 +120,8 @@
           </div>
           <div class="relative">
             <textarea id="output-text" rows="6" class="w-full p-3 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 dark:text-light rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all-300 resize-none dark:placeholder-gray-400" placeholder="转换结果将显示在这里..." readonly></textarea>
-            <div id="copy-toast" class="absolute -top-10 right-4 bg-green-500 text-white py-1 px-3 rounded-lg shadow-lg opacity-0 transition-all-300">
-              <i class="fa fa-check mr-1"></i> 已复制!
+            <div id="toast-notification" class="absolute -top-10 right-4 bg-green-500 text-white py-1 px-3 rounded-lg shadow-lg opacity-0 transition-all-300">
+                <span></span>
             </div>
           </div>
         </div>
@@ -182,10 +183,43 @@
     const clearInputBtn = document.getElementById('clear-input');
     const sampleTextBtn = document.getElementById('sample-text');
     const copyOutputBtn = document.getElementById('copy-output');
-    const copyToast = document.getElementById('copy-toast');
+    const toast = document.getElementById('toast-notification');
+    const charCounter = document.getElementById('char-counter');
+    
+    const MAX_INPUT_LENGTH = 50000;
     
     // 初始化Web Worker
     const worker = new Worker('worker.js');
+
+    function showToast(message, isError = false) {
+      const toastSpan = toast.querySelector('span');
+      toastSpan.innerHTML = message;
+      toast.classList.remove('bg-green-500', 'bg-red-500');
+      toast.classList.add(isError ? 'bg-red-500' : 'bg-green-500');
+      
+      toast.style.opacity = '1';
+      setTimeout(() => {
+        toast.style.opacity = '0';
+      }, 2500);
+    }
+
+    function updateCharCounter() {
+      const currentLength = inputText.value.length;
+      charCounter.textContent = `${currentLength} / ${MAX_INPUT_LENGTH}`;
+      if (currentLength >= MAX_INPUT_LENGTH) {
+        charCounter.classList.add('text-red-500', 'font-bold');
+      } else {
+        charCounter.classList.remove('text-red-500', 'font-bold');
+      }
+    }
+
+    inputText.addEventListener('input', () => {
+      if (inputText.value.length > MAX_INPUT_LENGTH) {
+        inputText.value = inputText.value.substring(0, MAX_INPUT_LENGTH);
+        showToast('<i class="fa fa-warning mr-1"></i> 已达到字数上限!', true);
+      }
+      updateCharCounter();
+    });
 
     function setProcessing(isProcessing) {
       encodeBtn.disabled = isProcessing;
@@ -246,6 +280,11 @@
         const temp = inputText.value;
         inputText.value = outputText.value;
         outputText.value = temp;
+        updateCharCounter();
+        if (inputText.value.length > MAX_INPUT_LENGTH) {
+            inputText.value = inputText.value.substring(0, MAX_INPUT_LENGTH);
+            showToast('<i class="fa fa-warning mr-1"></i> 输入内容已截断!', true);
+        }
         setProcessing(false);
       }, 10);
     });
@@ -253,12 +292,14 @@
     clearInputBtn.addEventListener('click', () => {
       inputText.value = '';
       outputText.value = '';
+      updateCharCounter();
       inputText.focus();
     });
     
     sampleTextBtn.addEventListener('click', () => {
       inputText.value = 'hello';
       outputText.value = '嘎咕嘎咕嘎嘎咕哇擦嘎嘎🍄哇擦嘎咕🐧咕嘎嘎🐧🐧咕';
+      updateCharCounter();
     });
     
     copyOutputBtn.addEventListener('click', () => {
@@ -267,11 +308,7 @@
       outputText.select();
       document.execCommand('copy');
       
-      // 显示复制成功提示
-      copyToast.style.opacity = '1';
-      setTimeout(() => {
-        copyToast.style.opacity = '0';
-      }, 2000);
+      showToast('<i class="fa fa-check mr-1"></i> 已复制!');
     });
 
     // Listen for system theme changes
@@ -283,7 +320,8 @@
         }
     });
     
-    // 初始化示例文本
+    // 初始化
+    updateCharCounter();
     sampleTextBtn.click();
   </script>
 </body>
