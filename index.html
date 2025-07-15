@@ -190,10 +190,12 @@
     function setProcessing(isProcessing) {
       encodeBtn.disabled = isProcessing;
       decodeBtn.disabled = isProcessing;
-      
+      swapBtn.disabled = isProcessing;
+
       if (!isProcessing) {
         encodeBtn.innerHTML = '<i class="fa fa-lock mr-2"></i> 编码';
         decodeBtn.innerHTML = '<i class="fa fa-unlock mr-2"></i> 解码';
+        swapBtn.innerHTML = '<i class="fa fa-exchange mr-2"></i> 交换';
       }
     }
     
@@ -206,7 +208,8 @@
       
       setProcessing(true);
       encodeBtn.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i> 正在编码...';
-      worker.postMessage({ type: 'encode', input: inputText.value });
+      const inputBytes = new TextEncoder().encode(inputText.value).buffer;
+      worker.postMessage({ type: 'encode', input: inputBytes }, [inputBytes]);
     });
     
     decodeBtn.addEventListener('click', () => {
@@ -217,7 +220,8 @@
       
       setProcessing(true);
       decodeBtn.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i> 正在解码...';
-      worker.postMessage({ type: 'decode', input: inputText.value });
+      const inputBytes = new TextEncoder().encode(inputText.value).buffer;
+      worker.postMessage({ type: 'decode', input: inputBytes }, [inputBytes]);
     });
 
     // 监听来自Worker的消息
@@ -226,7 +230,8 @@
       const { status, type, result, message } = e.data;
 
       if (status === 'success') {
-        outputText.value = result;
+        const resultText = new TextDecoder().decode(result);
+        outputText.value = resultText;
       } else {
         const action = type === 'encode' ? '编码' : '解码';
         outputText.value = `${action}错误: ${message}`;
@@ -234,9 +239,15 @@
     };
     
     swapBtn.addEventListener('click', () => {
-      const temp = inputText.value;
-      inputText.value = outputText.value;
-      outputText.value = temp;
+      setProcessing(true);
+      swapBtn.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i> 交换中...';
+
+      setTimeout(() => {
+        const temp = inputText.value;
+        inputText.value = outputText.value;
+        outputText.value = temp;
+        setProcessing(false);
+      }, 10);
     });
     
     clearInputBtn.addEventListener('click', () => {

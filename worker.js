@@ -108,17 +108,21 @@ function decodeCustomBase64(input) {
   }
 }
 
+// Worker消息处理器
 self.onmessage = function(e) {
-  const { type, input } = e.data;
+  const { type, input } = e.data; // input is ArrayBuffer
   try {
-    let result;
+    const inputText = new TextDecoder().decode(input);
+    let resultText;
     if (type === 'encode') {
-      result = encodeCustomBase64(input);
+      resultText = encodeCustomBase64(inputText);
     } else if (type === 'decode') {
-      result = decodeCustomBase64(input);
+      resultText = decodeCustomBase64(inputText);
     }
-    self.postMessage({ status: 'success', type, result });
+    const resultBytes = new TextEncoder().encode(resultText).buffer;
+    self.postMessage({ status: 'success', type, result: resultBytes }, [resultBytes]);
   } catch (error) {
+    // Error messages are strings, no need to encode
     self.postMessage({ status: 'error', type, message: error.message });
   }
 }; 
