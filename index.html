@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>企鹅语转换工具</title>
+  <link rel="icon" href="https://078465.xyz/wp-content/uploads/2025/07/favicon.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://lf6-cdn-tos.bytecdntp.com/cdn/expire-1-M/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  
+  <!-- Tailwind配置 -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: '#3b82f6',
+            secondary: '#6366f1',
+            accent: '#8b5cf6',
+            dark: '#1e293b',
+            light: '#f8fafc'
+          },
+          fontFamily: {
+            inter: ['Inter', 'system-ui', 'sans-serif'],
+          },
+        },
+      }
+    }
+  </script>
+
+  <script>
+    // On page load or when changing themes, best to add inline in `head` to avoid FOUC
+    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+    }
+  </script>
+  
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .content-auto {
+        content-visibility: auto;
+      }
+      .text-shadow {
+        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+      .bg-gradient {
+        background: linear-gradient(135deg, #3b82f6 0%, #6366f1 50%, #8b5cf6 100%);
+      }
+      .transition-all-300 {
+        transition: all 0.3s ease;
+      }
+      .hover-scale {
+        transition: transform 0.2s ease;
+      }
+      .hover-scale:hover {
+        transform: scale(1.02);
+      }
+    }
+  </style>
+</head>
+<body class="font-inter bg-gray-50 dark:bg-slate-900 min-h-screen flex flex-col">
+  <!-- 主要内容 -->
+  <main class="flex-grow container mx-auto px-4 py-6 md:py-8">
+    <!-- 标题区域 -->
+    <div class="text-center mb-8 md:mb-12">
+      <h2 class="text-[clamp(1.5rem,3vw,2.5rem)] font-bold text-dark dark:text-light mb-4">🐧企鹅语转换工具</h2>
+    </div>
+
+    <!-- 转换工具卡片 -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg max-w-4xl mx-auto overflow-hidden hover-scale">
+      <div class="bg-gradient p-4 md:p-6 text-white">
+        <h3 class="text-xl font-bold flex items-center">
+          <i class="fa fa-cogs mr-2"></i> 转换工具
+        </h3>
+      </div>
+      
+      <div class="p-4 md:p-6">
+        <!-- 输入区域 -->
+        <div class="mb-6">
+          <div class="flex flex-col md:flex-row md:items-center justify-between mb-2">
+            <label for="input-text" class="font-medium text-dark dark:text-light mb-2 md:mb-0">输入文本:</label>
+            <div class="flex space-x-2">
+              <button id="clear-input" class="text-gray-500 dark:text-gray-400 hover:text-red-500 transition-all-300">
+                <i class="fa fa-times-circle"></i> 清空
+              </button>
+              <button id="sample-text" class="text-gray-500 dark:text-gray-400 hover:text-primary transition-all-300">
+                <i class="fa fa-file-text-o"></i> 示例
+              </button>
+            </div>
+          </div>
+          <textarea id="input-text" rows="6" class="w-full p-3 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 dark:text-light rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all-300 resize-none dark:placeholder-gray-400" placeholder="请输入要转换的文本..."></textarea>
+        </div>
+        
+        <!-- 操作按钮 -->
+        <div class="flex flex-wrap gap-3 justify-center mb-6">
+          <button id="encode-btn" class="flex-1 md:flex-none bg-primary hover:bg-primary/90 text-white font-medium py-2 px-6 rounded-lg transition-all-300 shadow-md hover:shadow-lg flex items-center justify-center">
+            <i class="fa fa-lock mr-2"></i> 编码
+          </button>
+          <button id="decode-btn" class="flex-1 md:flex-none bg-secondary hover:bg-secondary/90 text-white font-medium py-2 px-6 rounded-lg transition-all-300 shadow-md hover:shadow-lg flex items-center justify-center">
+            <i class="fa fa-unlock mr-2"></i> 解码
+          </button>
+          <button id="swap-btn" class="flex-none bg-gray-200 dark:bg-slate-600 hover:bg-gray-300 dark:hover:bg-slate-500 text-gray-700 dark:text-slate-200 py-2 px-4 rounded-lg transition-all-300 flex items-center justify-center">
+            <i class="fa fa-exchange mr-2"></i> 交换
+          </button>
+        </div>
+        
+        <!-- 输出区域 -->
+        <div>
+          <div class="flex flex-col md:flex-row md:items-center justify-between mb-2">
+            <label for="output-text" class="font-medium text-dark dark:text-light mb-2 md:mb-0">转换结果:</label>
+            <div class="flex space-x-2">
+              <button id="copy-output" class="text-gray-500 dark:text-gray-400 hover:text-green-500 transition-all-300">
+                <i class="fa fa-clipboard"></i> 复制
+              </button>
+            </div>
+          </div>
+          <div class="relative">
+            <textarea id="output-text" rows="6" class="w-full p-3 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 dark:text-light rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all-300 resize-none dark:placeholder-gray-400" placeholder="转换结果将显示在这里..." readonly></textarea>
+            <div id="copy-toast" class="absolute -top-10 right-4 bg-green-500 text-white py-1 px-3 rounded-lg shadow-lg opacity-0 transition-all-300">
+              <i class="fa fa-check mr-1"></i> 已复制!
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 编码规则说明 -->
+    <div class="mt-12 max-w-4xl mx-auto">
+      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg overflow-hidden hover-scale">
+        <div class="bg-dark p-4 md:p-6 text-white">
+          <h3 class="text-xl font-bold flex items-center">
+            <i class="fa fa-book mr-2"></i> 编码规则说明
+          </h3>
+        </div>
+        
+        <div class="p-4 md:p-6">
+          <div class="space-y-4">
+            <div>
+              <h4 class="font-bold text-lg text-primary mb-2">Base64 符号映射</h4>
+              <p>本工具使用 "咕"、"嘎"、"🐧"、"🍄"、"哇擦" 作为基础字符集，通过组合这些字符表示标准 Base64 的 64 个符号：</p>
+              <ul class="list-disc pl-5 space-y-1 text-gray-700 dark:text-gray-300">
+                <li><span class="font-medium">单个字符</span>：咕、嘎、🐧、🍄 表示前 4 个符号 (A-D)</li>
+                <li><span class="font-medium">双字符组合</span>：包括 "哇擦" 开头的组合，如 哇擦咕、哇擦嘎... 表示接下来的 10 个符号 (E-N)</li>
+                <li><span class="font-medium">三字符组合</span>：使用三个字符的排列组合表示剩余 50 个符号</li>
+              </ul>
+            </div>
+            
+            <div>
+              <h4 class="font-bold text-lg text-primary mb-2">编码流程</h4>
+              <ol class="list-decimal pl-5 space-y-1 text-gray-700 dark:text-gray-300">
+                <li>将输入文本转换为二进制数据</li>
+                <li>每 3 字节（24 位）分为一组，不足则补零</li>
+                <li>每组按 6 位分割为 4 个值（0-63）</li>
+                <li>每个值映射为对应的 "咕/嘎/🐧/🍄/哇擦" 字符组合</li>
+              </ol>
+            </div>
+            
+            <div>
+              <h4 class="font-bold text-lg text-primary mb-2">示例</h4>
+              <p class="mb-2">标准 Base64 编码 "hello" 结果为 "aGVsbG8="，对应的自定义编码为：</p>
+              <div class="bg-gray-100 dark:bg-slate-700 p-3 rounded-lg overflow-x-auto">
+                <pre class="text-gray-800 dark:text-gray-200">嘎咕嘎嘎嘎嘎咕哇擦嘎嘎🍄哇擦嘎咕🐧咕嘎嘎🐧🐧咕</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- JavaScript -->
+  <script>
+    // DOM元素
+    const inputText = document.getElementById('input-text');
+    const outputText = document.getElementById('output-text');
+    const encodeBtn = document.getElementById('encode-btn');
+    const decodeBtn = document.getElementById('decode-btn');
+    const swapBtn = document.getElementById('swap-btn');
+    const clearInputBtn = document.getElementById('clear-input');
+    const sampleTextBtn = document.getElementById('sample-text');
+    const copyOutputBtn = document.getElementById('copy-output');
+    const copyToast = document.getElementById('copy-toast');
+    
+    // 字符集
+    const ALPHABET = ['咕', '嘎', '🐧', '🍄', '哇擦'];
+    
+    // 生成编码表 - 高效精简版
+    function generateEncodingTable() {
+      const table = [];
+      for (let i = 0; i < 64; i++) {
+        let n = i;
+        const d2 = Math.floor(n / 25);
+        n %= 25;
+        const d1 = Math.floor(n / 5);
+        const d0 = n % 5;
+        table.push(ALPHABET[d2] + ALPHABET[d1] + ALPHABET[d0]);
+      }
+      return table;
+    }
+    
+    // 生成解码表
+    function generateDecodingTable(encodingTable) {
+      const table = {};
+      encodingTable.forEach((code, index) => {
+        table[code] = index;
+      });
+      return table;
+    }
+    
+    // 编码表和解码表
+    const encodingTable = generateEncodingTable();
+    const decodingTable = generateDecodingTable(encodingTable);
+    
+    // 编码函数
+    function encodeCustomBase64(input) {
+      // 标准Base64编码
+      const base64 = btoa(unescape(encodeURIComponent(input)));
+      
+      // 转换为自定义Base64 (无分隔符)
+      let customEncoded = '';
+      for (let i = 0; i < base64.length; i++) {
+        const char = base64.charAt(i);
+        if (char === '=') {
+          // 忽略填充字符
+          continue;
+        } else {
+          const code = char.charCodeAt(0);
+          let index;
+          
+          if (code >= 65 && code <= 90) { // A-Z
+            index = code - 65;
+          } else if (code >= 97 && code <= 122) { // a-z
+            index = code - 71;
+          } else if (code >= 48 && code <= 57) { // 0-9
+            index = code + 4;
+          } else if (code === 43) { // +
+            index = 62;
+          } else if (code === 47) { // /
+            index = 63;
+          }
+          
+          customEncoded += encodingTable[index];
+        }
+      }
+      
+      return customEncoded;
+    }
+    
+    // 解码函数
+    function decodeCustomBase64(input) {
+      // 1. 词法分析：将输入字符串分割成 ALPHABET 中的符号
+      const tokens = [];
+      let currentPos = 0;
+      const sortedAlphabet = [...ALPHABET].sort((a, b) => b.length - a.length);
+
+      while (currentPos < input.length) {
+        const remaining = input.substring(currentPos);
+        const matchedToken = sortedAlphabet.find(token => remaining.startsWith(token));
+        
+        if (matchedToken) {
+          tokens.push(matchedToken);
+          currentPos += matchedToken.length;
+        } else {
+          // 如果有无法识别的字符，则解码失败
+          throw new Error('输入包含无效的字符组合');
+        }
+      }
+
+      // 2. 语法分析：将符号按3个一组进行分组
+      if (tokens.length % 3 !== 0) {
+        throw new Error('输入长度无效，无法按3个符号分组');
+      }
+
+      const codes = [];
+      for (let i = 0; i < tokens.length; i += 3) {
+        codes.push(tokens.slice(i, i + 3).join(''));
+      }
+
+      // 3. 转换回标准Base64
+      let base64 = '';
+      for (const code of codes) {
+        const index = decodingTable[code];
+        if (index !== undefined) {
+          if (index >= 0 && index <= 25) { // A-Z
+            base64 += String.fromCharCode(index + 65);
+          } else if (index >= 26 && index <= 51) { // a-z
+            base64 += String.fromCharCode(index + 71);
+          } else if (index >= 52 && index <= 61) { // 0-9
+            base64 += String.fromCharCode(index - 4);
+          } else if (index === 62) { // +
+            base64 += '+';
+          } else if (index === 63) { // /
+            base64 += '/';
+          }
+        } else {
+            throw new Error(`无法解码的符号组合: "${code}"`);
+        }
+      }
+      
+      // 计算需要的填充字符数
+      const paddingNeeded = (4 - (base64.length % 4)) % 4;
+      base64 += '='.repeat(paddingNeeded);
+      
+      // 解码标准Base64
+      try {
+        return decodeURIComponent(escape(atob(base64)));
+      } catch (e) {
+        return '解码失败: ' + e.message;
+      }
+    }
+    
+    // 事件监听器
+    encodeBtn.addEventListener('click', () => {
+      if (inputText.value.trim() === '') {
+        outputText.value = '请输入要编码的文本';
+        return;
+      }
+      
+      try {
+        const encoded = encodeCustomBase64(inputText.value);
+        outputText.value = encoded;
+      } catch (e) {
+        outputText.value = `编码错误: ${e.message}`;
+      }
+    });
+    
+    decodeBtn.addEventListener('click', () => {
+      if (inputText.value.trim() === '') {
+        outputText.value = '请输入要解码的自定义Base64';
+        return;
+      }
+      
+      try {
+        const decoded = decodeCustomBase64(inputText.value);
+        outputText.value = decoded;
+      } catch (e) {
+        outputText.value = `解码错误: ${e.message}`;
+      }
+    });
+    
+    swapBtn.addEventListener('click', () => {
+      const temp = inputText.value;
+      inputText.value = outputText.value;
+      outputText.value = temp;
+    });
+    
+    clearInputBtn.addEventListener('click', () => {
+      inputText.value = '';
+      outputText.value = '';
+      inputText.focus();
+    });
+    
+    sampleTextBtn.addEventListener('click', () => {
+      inputText.value = 'hello';
+      // 示例: 'hello' -> btoa -> 'aGVsbG8='
+      // a(26) -> 101 -> 嘎咕嘎
+      // G(6)  -> 011 -> 咕嘎嘎
+      // V(21) -> 041 -> 咕哇擦嘎
+      // s(44) -> 134 -> 嘎🍄哇擦
+      // b(27) -> 102 -> 嘎咕🐧
+      // G(6)  -> 011 -> 咕嘎嘎
+      // 8(60) -> 220 -> 🐧🐧咕
+      outputText.value = '嘎咕嘎咕嘎嘎咕哇擦嘎嘎🍄哇擦嘎咕🐧咕嘎嘎🐧🐧咕';
+    });
+    
+    copyOutputBtn.addEventListener('click', () => {
+      if (outputText.value.trim() === '') return;
+      
+      outputText.select();
+      document.execCommand('copy');
+      
+      // 显示复制成功提示
+      copyToast.style.opacity = '1';
+      setTimeout(() => {
+        copyToast.style.opacity = '0';
+      }, 2000);
+    });
+
+    // Listen for system theme changes
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+        if (e.matches) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    });
+    
+    // 初始化示例文本
+    sampleTextBtn.click();
+  </script>
+</body>
+</html>
+    
