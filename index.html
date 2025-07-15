@@ -204,9 +204,9 @@
     }
 
     function updateCharCounter() {
-      const currentLength = inputText.value.length;
+      const currentLength = Array.from(inputText.value).length;
       charCounter.textContent = `${currentLength} / ${MAX_INPUT_LENGTH}`;
-      if (currentLength >= MAX_INPUT_LENGTH) {
+      if (currentLength > MAX_INPUT_LENGTH) {
         charCounter.classList.add('text-red-500', 'font-bold');
       } else {
         charCounter.classList.remove('text-red-500', 'font-bold');
@@ -231,8 +231,9 @@
     
     // 事件监听器
     encodeBtn.addEventListener('click', () => {
-      if (inputText.value.length > MAX_INPUT_LENGTH) {
-        inputText.value = inputText.value.substring(0, MAX_INPUT_LENGTH);
+      const charArray = Array.from(inputText.value);
+      if (charArray.length > MAX_INPUT_LENGTH) {
+        inputText.value = charArray.slice(0, MAX_INPUT_LENGTH).join('');
         updateCharCounter();
         showToast('<i class="fa fa-warning mr-1"></i> 输入已截断至上限', true);
       }
@@ -249,8 +250,9 @@
     });
     
     decodeBtn.addEventListener('click', () => {
-      if (inputText.value.length > MAX_INPUT_LENGTH) {
-        inputText.value = inputText.value.substring(0, MAX_INPUT_LENGTH);
+      const charArray = Array.from(inputText.value);
+      if (charArray.length > MAX_INPUT_LENGTH) {
+        inputText.value = charArray.slice(0, MAX_INPUT_LENGTH).join('');
         updateCharCounter();
         showToast('<i class="fa fa-warning mr-1"></i> 输入已截断至上限', true);
       }
