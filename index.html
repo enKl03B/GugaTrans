@@ -214,10 +214,6 @@
     }
 
     inputText.addEventListener('input', () => {
-      if (inputText.value.length > MAX_INPUT_LENGTH) {
-        inputText.value = inputText.value.substring(0, MAX_INPUT_LENGTH);
-        showToast('<i class="fa fa-warning mr-1"></i> 已达到字数上限!', true);
-      }
       updateCharCounter();
     });
 
@@ -235,6 +231,12 @@
     
     // 事件监听器
     encodeBtn.addEventListener('click', () => {
+      if (inputText.value.length > MAX_INPUT_LENGTH) {
+        inputText.value = inputText.value.substring(0, MAX_INPUT_LENGTH);
+        updateCharCounter();
+        showToast('<i class="fa fa-warning mr-1"></i> 输入已截断至上限', true);
+      }
+
       if (inputText.value.trim() === '') {
         outputText.value = '请输入要编码的文本';
         return;
@@ -247,6 +249,12 @@
     });
     
     decodeBtn.addEventListener('click', () => {
+      if (inputText.value.length > MAX_INPUT_LENGTH) {
+        inputText.value = inputText.value.substring(0, MAX_INPUT_LENGTH);
+        updateCharCounter();
+        showToast('<i class="fa fa-warning mr-1"></i> 输入已截断至上限', true);
+      }
+
       if (inputText.value.trim() === '') {
         outputText.value = '请输入要解码的自定义Base64';
         return;
@@ -281,10 +289,6 @@
         inputText.value = outputText.value;
         outputText.value = temp;
         updateCharCounter();
-        if (inputText.value.length > MAX_INPUT_LENGTH) {
-            inputText.value = inputText.value.substring(0, MAX_INPUT_LENGTH);
-            showToast('<i class="fa fa-warning mr-1"></i> 输入内容已截断!', true);
-        }
         setProcessing(false);
       }, 10);
     });
