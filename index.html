@@ -184,131 +184,16 @@
     const copyOutputBtn = document.getElementById('copy-output');
     const copyToast = document.getElementById('copy-toast');
     
-    // 字符集
-    const ALPHABET = ['咕', '嘎', '🐧', '🍄', '哇擦'];
-    
-    // 生成编码表 - 高效精简版
-    function generateEncodingTable() {
-      const table = [];
-      for (let i = 0; i < 64; i++) {
-        let n = i;
-        const d2 = Math.floor(n / 25);
-        n %= 25;
-        const d1 = Math.floor(n / 5);
-        const d0 = n % 5;
-        table.push(ALPHABET[d2] + ALPHABET[d1] + ALPHABET[d0]);
-      }
-      return table;
-    }
-    
-    // 生成解码表
-    function generateDecodingTable(encodingTable) {
-      const table = {};
-      encodingTable.forEach((code, index) => {
-        table[code] = index;
-      });
-      return table;
-    }
-    
-    // 编码表和解码表
-    const encodingTable = generateEncodingTable();
-    const decodingTable = generateDecodingTable(encodingTable);
-    
-    // 编码函数
-    function encodeCustomBase64(input) {
-      // 标准Base64编码
-      const base64 = btoa(unescape(encodeURIComponent(input)));
-      
-      // 转换为自定义Base64 (无分隔符)
-      let customEncoded = '';
-      for (let i = 0; i < base64.length; i++) {
-        const char = base64.charAt(i);
-        if (char === '=') {
-          // 忽略填充字符
-          continue;
-        } else {
-          const code = char.charCodeAt(0);
-          let index;
-          
-          if (code >= 65 && code <= 90) { // A-Z
-            index = code - 65;
-          } else if (code >= 97 && code <= 122) { // a-z
-            index = code - 71;
-          } else if (code >= 48 && code <= 57) { // 0-9
-            index = code + 4;
-          } else if (code === 43) { // +
-            index = 62;
-          } else if (code === 47) { // /
-            index = 63;
-          }
-          
-          customEncoded += encodingTable[index];
-        }
-      }
-      
-      return customEncoded;
-    }
-    
-    // 解码函数
-    function decodeCustomBase64(input) {
-      // 1. 词法分析：将输入字符串分割成 ALPHABET 中的符号
-      const tokens = [];
-      let currentPos = 0;
-      const sortedAlphabet = [...ALPHABET].sort((a, b) => b.length - a.length);
+    // 初始化Web Worker
+    const worker = new Worker('worker.js');
 
-      while (currentPos < input.length) {
-        const remaining = input.substring(currentPos);
-        const matchedToken = sortedAlphabet.find(token => remaining.startsWith(token));
-        
-        if (matchedToken) {
-          tokens.push(matchedToken);
-          currentPos += matchedToken.length;
-        } else {
-          // 如果有无法识别的字符，则解码失败
-          throw new Error('输入包含无效的字符组合');
-        }
-      }
-
-      // 2. 语法分析：将符号按3个一组进行分组
-      if (tokens.length % 3 !== 0) {
-        throw new Error('输入长度无效，无法按3个符号分组');
-      }
-
-      const codes = [];
-      for (let i = 0; i < tokens.length; i += 3) {
-        codes.push(tokens.slice(i, i + 3).join(''));
-      }
-
-      // 3. 转换回标准Base64
-      let base64 = '';
-      for (const code of codes) {
-        const index = decodingTable[code];
-        if (index !== undefined) {
-          if (index >= 0 && index <= 25) { // A-Z
-            base64 += String.fromCharCode(index + 65);
-          } else if (index >= 26 && index <= 51) { // a-z
-            base64 += String.fromCharCode(index + 71);
-          } else if (index >= 52 && index <= 61) { // 0-9
-            base64 += String.fromCharCode(index - 4);
-          } else if (index === 62) { // +
-            base64 += '+';
-          } else if (index === 63) { // /
-            base64 += '/';
-          }
-        } else {
-            throw new Error(`无法解码的符号组合: "${code}"`);
-        }
-      }
+    function setProcessing(isProcessing) {
+      encodeBtn.disabled = isProcessing;
+      decodeBtn.disabled = isProcessing;
       
-      // 计算需要的填充字符数
-      const paddingNeeded = (4 - (base64.length % 4)) % 4;
-      base64 += '='.repeat(paddingNeeded);
-      
-      // 解码标准Base64
-      try {
-        return decodeURIComponent(escape(atob(base64)));
-      } catch (e) {
-        return '解码失败: ' + e.message;
+      if (!isProcessing) {
+        encodeBtn.innerHTML = '<i class="fa fa-lock mr-2"></i> 编码';
+        decodeBtn.innerHTML = '<i class="fa fa-unlock mr-2"></i> 解码';
       }
     }
     
@@ -319,12 +204,9 @@
         return;
       }
       
-      try {
-        const encoded = encodeCustomBase64(inputText.value);
-        outputText.value = encoded;
-      } catch (e) {
-        outputText.value = `编码错误: ${e.message}`;
-      }
+      setProcessing(true);
+      encodeBtn.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i> 正在编码...';
+      worker.postMessage({ type: 'encode', input: inputText.value });
     });
     
     decodeBtn.addEventListener('click', () => {
@@ -333,13 +215,23 @@
         return;
       }
       
-      try {
-        const decoded = decodeCustomBase64(inputText.value);
-        outputText.value = decoded;
-      } catch (e) {
-        outputText.value = `解码错误: ${e.message}`;
-      }
+      setProcessing(true);
+      decodeBtn.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i> 正在解码...';
+      worker.postMessage({ type: 'decode', input: inputText.value });
     });
+
+    // 监听来自Worker的消息
+    worker.onmessage = function(e) {
+      setProcessing(false);
+      const { status, type, result, message } = e.data;
+
+      if (status === 'success') {
+        outputText.value = result;
+      } else {
+        const action = type === 'encode' ? '编码' : '解码';
+        outputText.value = `${action}错误: ${message}`;
+      }
+    };
     
     swapBtn.addEventListener('click', () => {
       const temp = inputText.value;
@@ -355,14 +247,6 @@
     
     sampleTextBtn.addEventListener('click', () => {
       inputText.value = 'hello';
-      // 示例: 'hello' -> btoa -> 'aGVsbG8='
-      // a(26) -> 101 -> 嘎咕嘎
-      // G(6)  -> 011 -> 咕嘎嘎
-      // V(21) -> 041 -> 咕哇擦嘎
-      // s(44) -> 134 -> 嘎🍄哇擦
-      // b(27) -> 102 -> 嘎咕🐧
-      // G(6)  -> 011 -> 咕嘎嘎
-      // 8(60) -> 220 -> 🐧🐧咕
       outputText.value = '嘎咕嘎咕嘎嘎咕哇擦嘎嘎🍄哇擦嘎咕🐧咕嘎嘎🐧🐧咕';
     });
     
